@@ -1,0 +1,59 @@
+name: "Automated Dependency Update"
+description: "Automatically updates dependencies, builds, tests, and creates a PR if changes exist."
+author: "Cloud Copilot"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+    - run: npm install
+    - run: npm update
+
+    - name: Check for changes
+      id: check_changes
+      run: |
+        if git diff-index --quiet HEAD --; then
+          echo "No changes detected."
+          echo "changesDetected=false" >> $GITHUB_OUTPUT
+        else
+          echo "Changes detected."
+          echo "changesDetected=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Build project
+      if: steps.check_changes.outputs.changesDetected == 'true'
+      run: npm run build
+
+    - name: Test project
+      if: steps.check_changes.outputs.changesDetected == 'true'
+      run: npm test
+
+    - name: Create update branch
+      if: steps.check_changes.outputs.changesDetected == 'true'
+      id: create_branch
+      run: |
+        BRANCH="chore/update-dependencies-$(date +'%y%m%d')"
+        git checkout -b "$BRANCH"
+        echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+
+    - name: Commit changes
+      if: steps.check_changes.outputs.changesDetected == 'true'
+      run: |
+        git config user.name "github-actions"
+        git config user.email "github-actions@cloudcopilot.io"
+        git add .
+        git diff-index --quiet HEAD || git commit -m "chore: automated dependency updates"
+
+    - name: Push branch
+      if: steps.check_changes.outputs.changesDetected == 'true'
+      run: git push origin HEAD
+
+    - name: Create Pull Request
+      if: steps.check_changes.outputs.changesDetected == 'true'
+      run: |
+        PR_TITLE="chore: update dependency updates $(date +'%y%m%d')"
+        gh pr create -B main -H $BRANCH --title "$PR_TITLE" --body 'Automated dependency updates'
