@@ -43,7 +43,7 @@ runs:
       id: create_branch
       shell: bash
       run: |
-        BRANCH="chore/update-dependencies-$(date +'%y%m%d')"
+        BRANCH="chore/update-dependencies-$(date +'%Y-%b-%d')"
         git checkout -b "$BRANCH"
         echo "BRANCH=$BRANCH" >> $GITHUB_ENV
 
@@ -64,6 +64,8 @@ runs:
     - name: Create Pull Request
       if: steps.check_changes.outputs.changesDetected == 'true'
       shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
-        PR_TITLE="chore: update dependency updates $(date +'%y%m%d')"
+        PR_TITLE="chore: update dependency updates $(date +'%Y-%b-%d')"
         gh pr create -B main -H $BRANCH --title "$PR_TITLE" --body 'Automated dependency updates'
