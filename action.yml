@@ -67,5 +67,5 @@ runs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        PR_TITLE="chore: update dependency updates $(date +'%Y-%b-%d')"
+        PR_TITLE="chore(deps): update dependencies $(date +'%Y-%b-%d')"
         gh pr create -B main -H $BRANCH --title "$PR_TITLE" --body 'Automated dependency updates'
