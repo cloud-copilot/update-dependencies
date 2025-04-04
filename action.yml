@@ -10,11 +10,15 @@ runs:
       with:
         node-version: '22'
         cache: 'npm'
-    - run: npm install
-    - run: npm update
+    - name: Update Dependencies
+      shell: bash
+      run: |
+        npm install
+        npm update
 
     - name: Check for changes
       id: check_changes
+      shell: bash
       run: |
         if git diff-index --quiet HEAD --; then
           echo "No changes detected."
@@ -26,15 +30,18 @@ runs:
 
     - name: Build project
       if: steps.check_changes.outputs.changesDetected == 'true'
+      shell: bash
       run: npm run build
 
     - name: Test project
       if: steps.check_changes.outputs.changesDetected == 'true'
+      shell: bash
       run: npm test
 
     - name: Create update branch
       if: steps.check_changes.outputs.changesDetected == 'true'
       id: create_branch
+      shell: bash
       run: |
         BRANCH="chore/update-dependencies-$(date +'%y%m%d')"
         git checkout -b "$BRANCH"
@@ -42,6 +49,7 @@ runs:
 
     - name: Commit changes
       if: steps.check_changes.outputs.changesDetected == 'true'
+      shell: bash
       run: |
         git config user.name "github-actions"
         git config user.email "github-actions@cloudcopilot.io"
@@ -50,10 +58,12 @@ runs:
 
     - name: Push branch
       if: steps.check_changes.outputs.changesDetected == 'true'
+      shell: bash
       run: git push origin HEAD
 
     - name: Create Pull Request
       if: steps.check_changes.outputs.changesDetected == 'true'
+      shell: bash
       run: |
         PR_TITLE="chore: update dependency updates $(date +'%y%m%d')"
         gh pr create -B main -H $BRANCH --title "$PR_TITLE" --body 'Automated dependency updates'
